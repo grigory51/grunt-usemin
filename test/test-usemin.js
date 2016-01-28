@@ -2,8 +2,7 @@
 var path = require('path');
 var assert = require('assert');
 var grunt = require('grunt');
-var rimraf = require('rimraf');
-var mkdirp = require('mkdirp');
+var helpers = require('./helpers');
 
 grunt.task.init([]);
 grunt.config.init({});
@@ -11,27 +10,9 @@ grunt.config.init({});
 var opts = grunt.cli.options;
 opts.redirect = !opts.silent;
 
-var directory = function directory(dir) {
-  return function directory(done) {
-    process.chdir(__dirname);
-    rimraf(dir, function (err) {
-      if (err) {
-        return done(err);
-      }
-      mkdirp(dir, function (err) {
-        if (err) {
-          return done(err);
-        }
-        process.chdir(dir);
-        done();
-      });
-    });
-  };
-};
-
 describe('usemin', function () {
   describe('absolute paths', function () {
-    beforeEach(directory('temp'));
+    beforeEach(helpers.directory('temp'));
 
     it('should replace with revved files when found', function () {
       grunt.file.mkdir('build');
@@ -124,7 +105,7 @@ describe('usemin', function () {
   });
 
   describe('relative paths', function () {
-    beforeEach(directory('temp'));
+    beforeEach(helpers.directory('temp'));
 
     it('should replace with revved files when found', function () {
       grunt.file.mkdir('build');
@@ -215,7 +196,7 @@ describe('usemin', function () {
 
   });
 
-  before(directory('temp'));
+  before(helpers.directory('temp'));
 
   it('should work on CSS files', function () {
     grunt.file.mkdir('images');
@@ -287,7 +268,11 @@ describe('usemin', function () {
     grunt.file.mkdir('images');
     grunt.file.write('images/test.2132.png', 'foo');
     grunt.file.write('images/test.2134.png', 'foo');
-    grunt.file.write('summary.js', '{"images/test.png": "images/test.2134.png"}');
+
+    var summary = {};
+    summary[helpers.normalize('images/test.png')] = 'images/test.2134.png';
+
+    grunt.file.write('summary.js', JSON.stringify(summary));
     grunt.log.muted = true;
     grunt.config.init();
     grunt.config('usemin', {
@@ -310,10 +295,11 @@ describe('usemin', function () {
     // grunt.file.mkdir('images');
     // grunt.file.write('images/test.2132.png', 'foo');
     // grunt.file.write('images/test.2134.png', 'foo');
+    var summary = {};
+    summary[helpers.normalize('images/test.png')] = 'images/test.2134.png';
+
     grunt.filerev = {
-      summary: {
-        'images/test.png': 'images/test.2134.png'
-      }
+      summary: summary
     };
     grunt.log.muted = true;
     grunt.config.init();
@@ -524,7 +510,7 @@ describe('useminPrepare', function () {
       options: {
         flow: {
           steps: {
-            js: ['uglifyjs']
+            js: ['uglify']
           },
           post: {}
         }
@@ -556,7 +542,7 @@ describe('useminPrepare', function () {
         flow: {
           html: {
             steps: {
-              js: ['uglifyjs']
+              js: ['uglify']
             },
             post: {}
           }
